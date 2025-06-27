@@ -3,12 +3,15 @@ const app = express();
 const { connect } = require("./db_config");
 const { Product } = require("./Product_Schema");
 const cors = require("cors");
+const dotenv = require("dotenv").config()
 app.use(express.json());
 app.use(
   cors({
     origin: "*",
   })
 );
+
+
 
 (async () => {
   await connect();

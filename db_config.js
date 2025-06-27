@@ -1,9 +1,7 @@
 const mongoose = require("mongoose");
 
 async function connect() {
-  await mongoose.connect("mongodb://localhost:27017/products");
+  await mongoose.connect(process.env.DB);
 }
-
-// m6VpvjQeZGW0xyex
 
 module.exports = { connect };
