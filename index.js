@@ -6,7 +6,9 @@ const cors = require("cors");
 const { User } = require("./User_Schema");
 const bcrypt = require("bcryptjs");
 const dotenv = require("dotenv").config();
+const jwt = require("jsonwebtoken")
 app.use(express.json());
+const JWT_KEY = "&jq]k6}'%ik6'-.X"
 app.use(
   cors({
     origin: "*",
@@ -18,9 +20,24 @@ app.use(
   console.log("DB Connected");
 })();
 
-app.post("/product", async (req, res) => {
+function authenticate(req, res, next) {
+  if (!req.headers.authorization) {
+    return res.status(401).json({ message: "Not Aloowed" })
+  } else {
+    try {
+      const payload = jwt.verify(req.headers.authorization, JWT_KEY)
+      console.log(payload)
+      req.user = payload
+      next()
+    } catch (error) {
+      return res.status(401).json({ message: "Not a valid token" })
+    }
+  }
+}
+
+app.post("/product", authenticate, async (req, res) => {
   try {
-    console.log(req.body);
+    console.log(req.user._id);
     const product = new Product(req.body);
     await product.save();
     res.json({
@@ -34,7 +51,7 @@ app.post("/product", async (req, res) => {
   }
 });
 
-app.get("/products", async (req, res) => {
+app.get("/products",authenticate, async (req, res) => {
   try {
     const products = await Product.find();
     res.json(products);
@@ -43,7 +60,7 @@ app.get("/products", async (req, res) => {
   }
 });
 
-app.put("/product/:id", async (req, res) => {
+app.put("/product/:id", authenticate,async (req, res) => {
   try {
     await Product.findOneAndUpdate({ _id: req.params.id }, req.body);
     res.json({ message: "Updated" });
@@ -52,7 +69,7 @@ app.put("/product/:id", async (req, res) => {
   }
 });
 
-app.delete("/product/:id", async (req, res) => {
+app.delete("/product/:id",authenticate, async (req, res) => {
   try {
     await Product.findByIdAndDelete({ _id: req.params.id });
     res.json({ message: "Deleted" });
@@ -88,6 +105,7 @@ app.post("/login", async (req, res) => {
     // if hash is matching then make him login.
 
     const user = await User.findOne({ email: req.body.email });
+    console.log(user)
     if (user) {
       const checkPassword = bcrypt.compareSync(
         req.body.password,
@@ -95,7 +113,8 @@ app.post("/login", async (req, res) => {
       );
 
       if (checkPassword) {
-        res.json({ message: "Correct Password" });
+        const token = jwt.sign({ _id: user._id, role: "user" }, JWT_KEY, { expiresIn: '1h' })
+        res.json({ message: "Correct Password", token });
       } else {
         res.status(401).json({
           message: "Incorrect Password",
@@ -104,7 +123,9 @@ app.post("/login", async (req, res) => {
     } else {
       res.status(401).json({ email: "User Not Found" });
     }
-  } catch (error) {}
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong", error })
+  }
 });
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
