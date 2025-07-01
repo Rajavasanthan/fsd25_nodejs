@@ -38,7 +38,7 @@ function authenticate(req, res, next) {
 app.post("/product", authenticate, async (req, res) => {
   try {
     console.log(req.user._id);
-    const product = new Product(req.body);
+    const product = new Product({...req.body,createdBy:req.user._id});
     await product.save();
     res.json({
       message: "Product Added",
@@ -53,7 +53,7 @@ app.post("/product", authenticate, async (req, res) => {
 
 app.get("/products",authenticate, async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find({createdBy : req.user._id});
     res.json(products);
   } catch (error) {
     res.status(500).json(error);

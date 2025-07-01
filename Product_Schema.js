@@ -13,6 +13,10 @@ const ProductSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  createdBy : {
+    type : mongoose.Schema.Types.ObjectId,
+    required : true
+  }
 });
 
 const Product = mongoose.model("Product", ProductSchema);
